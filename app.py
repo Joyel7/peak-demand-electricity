@@ -168,6 +168,7 @@ elif page == "💰 KSEB Bill Calculator":
 
         st.success(f"Estimated Bill: ₹{bill:.2f}")
 
-        if st.button("🔙 Back to Home"):
-            st.session_state.page = "🏠 Home"
-            st.rerun()
+    # ✅ BACK TO HOME BUTTON (FIXED)
+    if st.button("🔙 Back to Home"):
+        st.session_state.page = "🏠 Home"
+        st.rerun()
