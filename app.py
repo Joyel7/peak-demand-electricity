@@ -152,23 +152,117 @@ elif page == "🔮 Peak Hour Predictor":
 # BILL CALCULATOR
 # ------------------------------------------
 elif page == "💰 KSEB Bill Calculator":
-    st.title("💰 KSEB Bill Estimator")
+    st.title("💰 KSEB Smart Bill & Savings Estimator")
 
-    units = st.number_input("Enter units consumed (kWh):", min_value=0.0, step=0.1)
+    st.markdown("### 🔢 Consumption Inputs")
+    daily_units = st.number_input(
+        "Enter average daily consumption (kWh):",
+        min_value=0.0,
+        step=0.1
+    )
 
-    if st.button("🧾 Calculate Bill"):
-        if units <= 50:
-            bill = units * 3.15
-        elif units <= 100:
-            bill = 50 * 3.15 + (units - 50) * 3.70
-        elif units <= 250:
-            bill = 50 * 3.15 + 50 * 3.70 + (units - 100) * 5.80
+    days = st.slider("Billing period (days)", 1, 31, 30)
+
+    peak_pct = st.slider(
+        "Peak-hour usage (%)",
+        0, 100, 40,
+        help="Peak hours usually between 6 PM – 10 PM"
+    )
+
+    # -------------------------------
+    # TOD TARIFF (Simplified)
+    # -------------------------------
+    peak_rate = 7.0
+    normal_rate = 5.0
+    offpeak_rate = 3.0
+
+    if st.button("🧾 Calculate Smart Bill"):
+        total_units = daily_units * days
+
+        peak_units = total_units * (peak_pct / 100)
+        offpeak_units = total_units - peak_units
+
+        # ToD billing
+        peak_cost = peak_units * peak_rate
+        offpeak_cost = offpeak_units * offpeak_rate
+        tod_bill = peak_cost + offpeak_cost
+
+        # Normal slab billing (comparison)
+        if total_units <= 50:
+            slab_bill = total_units * 3.15
+        elif total_units <= 100:
+            slab_bill = 50 * 3.15 + (total_units - 50) * 3.70
+        elif total_units <= 250:
+            slab_bill = 50 * 3.15 + 50 * 3.70 + (total_units - 100) * 5.80
         else:
-            bill = 50 * 3.15 + 50 * 3.70 + 150 * 5.80 + (units - 250) * 6.60
+            slab_bill = (
+                50 * 3.15 +
+                50 * 3.70 +
+                150 * 5.80 +
+                (total_units - 250) * 6.60
+            )
 
-        st.success(f"Estimated Bill: ₹{bill:.2f}")
+        # -------------------------------
+        # SAVINGS SIMULATION
+        # -------------------------------
+        shifted_peak_pct = max(peak_pct - 20, 0)
+        shifted_peak_units = total_units * (shifted_peak_pct / 100)
+        shifted_offpeak_units = total_units - shifted_peak_units
+        optimized_bill = (
+            shifted_peak_units * peak_rate +
+            shifted_offpeak_units * offpeak_rate
+        )
 
-    # ✅ BACK TO HOME BUTTON (FIXED)
+        savings = tod_bill - optimized_bill
+
+        # -------------------------------
+        # CARBON EMISSION
+        # -------------------------------
+        carbon = total_units * 0.82  # kg CO₂
+
+        # -------------------------------
+        # RESULTS
+        # -------------------------------
+        st.success(f"💸 Time-of-Day Bill: ₹{tod_bill:.2f}")
+        st.info(f"📄 Normal Slab Bill (approx): ₹{slab_bill:.2f}")
+
+        st.markdown("### 📊 Usage Breakdown")
+        df_usage = pd.DataFrame({
+            "Type": ["Peak Hours", "Off-Peak Hours"],
+            "Units (kWh)": [peak_units, offpeak_units]
+        })
+        st.bar_chart(df_usage.set_index("Type"))
+
+        st.markdown("### 💡 Smart Savings Insight")
+        st.write(f"🔁 If you shift **20% usage to off-peak hours:**")
+        st.write(f"💰 New Bill: ₹{optimized_bill:.2f}")
+        st.success(f"✅ You can save approx ₹{savings:.2f} per month")
+
+        st.markdown("### 🌱 Environmental Impact")
+        st.write(f"Estimated CO₂ Emission: **{carbon:.2f} kg**")
+
+        st.markdown("### 🏠 Appliance Scheduling Tips")
+        if peak_pct > 50:
+            st.warning(
+                "⚠️ High peak usage detected.\n\n"
+                "• Run washing machine after 10 PM\n"
+                "• Avoid iron box during peak hours\n"
+                "• Use AC efficiently at night"
+            )
+        else:
+            st.success(
+                "✅ Good energy habits!\n\n"
+                "• You are using appliances efficiently\n"
+                "• Peak load on grid is reduced"
+            )
+
+        st.markdown("### 📆 Long-Term Projection")
+        st.write(f"📅 Estimated yearly bill: ₹{tod_bill * 12:.2f}")
+        st.write(f"🌍 Yearly CO₂ emission: {carbon * 12:.2f} kg")
+
+    # -------------------------------
+    # NAVIGATION
+    # -------------------------------
     if st.button("🔙 Back to Home"):
         st.session_state.page = "🏠 Home"
         st.rerun()
