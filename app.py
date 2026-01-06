@@ -27,7 +27,7 @@ def load_hourly_data():
     df['Hour'] = df['Datetime'].dt.hour
     return df
 
-# ------------------------------------------
+# -----------------------------------------
 # SESSION STATE
 # ------------------------------------------
 if "page" not in st.session_state:
